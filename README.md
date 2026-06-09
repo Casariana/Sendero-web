@@ -51,4 +51,9 @@ El logo oficial está en `public/logo.jpeg` y se usa en el header, hero y footer
 
 ## Contador de visitas
 
-El contador usa [CounterAPI](https://counterapi.dev) (v1, sin autenticación) con namespace `sendero-de-la-80` y nombre `visitas`. CountAPI.xyz dejó de funcionar; este es el reemplazo activo. No requiere configuración adicional en Netlify.
+El contador usa [CounterAPI](https://counterapi.dev) con namespace `sendero-de-la-80` y nombre `visitas`.
+
+- **En producción (Netlify):** las peticiones pasan por `/.netlify/functions/visits` para evitar bloqueos del navegador y problemas de CORS.
+- **En desarrollo local:** se consulta CounterAPI directamente.
+
+Tras cambios en `netlify/functions/`, haz un nuevo deploy en Netlify para que la función quede activa.

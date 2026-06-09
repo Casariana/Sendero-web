@@ -1,9 +1,15 @@
 import { useEffect, useState } from 'react'
 
-const NAMESPACE = 'sendero-de-la-80'
-const COUNTER_NAME = 'visitas'
-const API_BASE = `https://api.counterapi.dev/v1/${NAMESPACE}/${COUNTER_NAME}`
 const SESSION_HIT_KEY = 'sendero-visit-recorded'
+
+const API = {
+  get: import.meta.env.DEV
+    ? 'https://api.counterapi.dev/v1/sendero-de-la-80/visitas/'
+    : '/.netlify/functions/visits',
+  hit: import.meta.env.DEV
+    ? 'https://api.counterapi.dev/v1/sendero-de-la-80/visitas/up'
+    : '/.netlify/functions/visits?action=hit',
+}
 
 function formatCount(value) {
   return new Intl.NumberFormat('es-CO').format(value)
@@ -19,32 +25,49 @@ export default function VisitCounter() {
   const [count, setCount] = useState(null)
 
   useEffect(() => {
-    const controller = new AbortController()
-    const alreadyCounted = sessionStorage.getItem(SESSION_HIT_KEY)
-    const endpoint = alreadyCounted ? API_BASE : `${API_BASE}/up`
+    let cancelled = false
 
-    fetch(endpoint, { signal: controller.signal })
-      .then((res) => (res.ok ? res.json() : Promise.reject()))
-      .then((data) => {
-        const value = parseCount(data)
-        if (value !== null) {
-          setCount(value)
-          if (!alreadyCounted) {
-            sessionStorage.setItem(SESSION_HIT_KEY, 'true')
+    async function loadVisits() {
+      try {
+        const alreadyCounted = sessionStorage.getItem(SESSION_HIT_KEY)
+
+        if (!alreadyCounted) {
+          const hitResponse = await fetch(API.hit)
+          if (hitResponse.ok) {
+            const hitData = await hitResponse.json()
+            const hitValue = parseCount(hitData)
+            if (!cancelled && hitValue !== null) {
+              setCount(hitValue)
+              sessionStorage.setItem(SESSION_HIT_KEY, 'true')
+              return
+            }
           }
         }
-      })
-      .catch(() => {
-        setCount(null)
-      })
 
-    return () => controller.abort()
+        const getResponse = await fetch(API.get)
+        if (getResponse.ok) {
+          const getData = await getResponse.json()
+          const getValue = parseCount(getData)
+          if (!cancelled && getValue !== null) {
+            setCount(getValue)
+          }
+        }
+      } catch {
+        if (!cancelled) setCount(null)
+      }
+    }
+
+    loadVisits()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   return (
-    <div className="flex items-center gap-2 text-xs text-ink-muted sm:text-sm">
-      <span className="inline-block h-1.5 w-1.5 rounded-full bg-forest-light shadow-[0_0_4px_rgba(64,145,108,0.6)]" />
-      <span>
+    <div className="flex items-center gap-1.5 rounded-lg border border-cream-dark bg-cream px-2 py-1 text-[11px] text-ink-muted sm:gap-2 sm:px-2.5 sm:py-1.5 sm:text-xs md:text-sm">
+      <span className="inline-block h-1.5 w-1.5 shrink-0 rounded-full bg-forest-light shadow-[0_0_4px_rgba(64,145,108,0.6)]" />
+      <span className="whitespace-nowrap">
         Visitas:{' '}
         <strong className="font-semibold text-ink">
           {count !== null ? formatCount(count) : '—'}

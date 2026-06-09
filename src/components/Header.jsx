@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import VisitCounter from './VisitCounter'
 
 const navLinks = [
@@ -9,47 +10,100 @@ const navLinks = [
 ]
 
 export default function Header() {
-  return (
-    <header className="sticky top-0 z-50 border-b border-cream-dark bg-white/95 shadow-sm backdrop-blur-md">
-      <div className="border-b border-cream-dark bg-cream px-4 py-1.5">
-        <div className="mx-auto flex max-w-6xl justify-end">
-          <VisitCounter />
-        </div>
-      </div>
+  const [menuOpen, setMenuOpen] = useState(false)
 
-      <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-        <a href="#inicio" className="flex shrink-0 items-center gap-3">
+  useEffect(() => {
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setMenuOpen(false)
+    }
+
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [])
+
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : ''
+    return () => {
+      document.body.style.overflow = ''
+    }
+  }, [menuOpen])
+
+  const closeMenu = () => setMenuOpen(false)
+
+  return (
+    <header className="relative sticky top-0 z-50 border-b border-cream-dark bg-white/95 shadow-sm backdrop-blur-md">
+      <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-2.5 sm:py-3">
+        <a href="#inicio" className="flex shrink-0 items-center" onClick={closeMenu}>
           <img
             src="/logo.jpeg"
             alt="Logo Sendero de la 80"
-            className="h-12 w-auto object-contain sm:h-14"
+            className="h-10 w-auto object-contain sm:h-12 md:h-14"
           />
         </a>
 
-        <nav className="hidden items-center gap-1 md:flex">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-cream hover:text-copper-dark"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
-
-        <nav className="flex gap-1 overflow-x-auto md:hidden">
-          {navLinks.map((link) => (
-            <a
-              key={link.href}
-              href={link.href}
-              className="whitespace-nowrap rounded-lg px-2.5 py-1.5 text-xs font-medium text-ink-muted transition hover:bg-cream hover:text-copper-dark"
-            >
-              {link.label}
-            </a>
-          ))}
-        </nav>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <VisitCounter />
+          <button
+            type="button"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-cream-dark bg-cream text-ink transition hover:border-copper/30 hover:text-copper-dark lg:hidden"
+            aria-expanded={menuOpen}
+            aria-controls="mobile-nav"
+            aria-label={menuOpen ? 'Cerrar menú' : 'Abrir menú'}
+            onClick={() => setMenuOpen((open) => !open)}
+          >
+            {menuOpen ? (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
       </div>
+
+      <nav className="mx-auto hidden max-w-6xl items-center justify-center gap-1 border-t border-cream-dark px-4 py-2 lg:flex">
+        {navLinks.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            className="rounded-lg px-3 py-2 text-sm font-medium text-ink-muted transition hover:bg-cream hover:text-copper-dark"
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
+
+      {menuOpen && (
+        <>
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-ink/20 lg:hidden"
+            aria-label="Cerrar menú"
+            onClick={closeMenu}
+          />
+          <nav
+            id="mobile-nav"
+            className="absolute left-0 right-0 top-full z-50 border-b border-cream-dark bg-white px-4 py-3 shadow-lg lg:hidden"
+          >
+            <ul className="flex flex-col gap-1">
+              {navLinks.map((link) => (
+                <li key={link.href}>
+                  <a
+                    href={link.href}
+                    className="block rounded-lg px-4 py-3 text-base font-medium text-ink-muted transition hover:bg-cream hover:text-copper-dark"
+                    onClick={closeMenu}
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        </>
+      )}
     </header>
   )
 }
